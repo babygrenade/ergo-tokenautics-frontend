@@ -1,0 +1,21 @@
+body{
+  font-family: Arial;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+.outer-chart{
+  width: 1000px;
+}
+
+
+.chart-wrapper {
+  border-style: solid;
+  border-width: 1px;
+}
+
+.left {
+  font-size: 12px;
+}
