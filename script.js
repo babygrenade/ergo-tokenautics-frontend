@@ -105,7 +105,8 @@ function makeChart(data) {
                 grid: {
                   offset: true
                 }
-            }
+            },
+        
         },
        legend: {
         display: false
@@ -130,6 +131,7 @@ function makeChart(data) {
     },
     data: {
       labels: shortLabels,
+      longLabels: addressLabels,
       datasets: [
         {
           label:'Amount',
@@ -139,4 +141,12 @@ function makeChart(data) {
       ]
     }
   });
+  document.getElementById("chart").onclick = function(evt){
+    var activePoints = chart.getElementsAtEvent(evt);
+    var firstPoint = activePoints[0];
+    var contextUrl = 'https://explorer.ergoplatform.com/en/addresses/' + chart.data.longLabels[firstPoint._index] ;
+    if (firstPoint !== undefined)
+        window.open(contextUrl, '_blank');
+  }
 }
+
