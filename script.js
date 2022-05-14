@@ -63,18 +63,26 @@ function showSummary(data){
   summary = line1 +'\r\n'+ line2;
   document.getElementById("summary").setAttribute('style', 'white-space: pre;');
   document.getElementById("summary").textContent = summary;
+  return totalSupply
 }
 
 function makeChart(data) {
   showSummary(data);
-  //data = data.slice(1);
-  if (data.length > 100){
-    data = data.slice(0,99);
+  if (document.getElementById("pop_top").checked == true){
+    data = data.slice(1);
   }
-  var addresses = data;
+
+  if (data.length > 100){
+    addresses = data.slice(0,99);
+  }
+  else{
+    addresses = data
+  }
   var addressLabels = addresses.map(function(d) {return d.address});
   var percentageData = addresses.map(function(d) {return d.percentage*100});
   var amountData = addresses.map(function(d) {return d.amount});
+  var fullAmt = data.map(function(d) {return d.amount});
+  var totalSupply = d3.sum(fullAmt);
   var shortLabels = [];
   for ( var i = 0; i < addressLabels.length; i++){
     if (addressLabels[i].length > 51){
@@ -109,8 +117,10 @@ function makeChart(data) {
             return addressLabels[t[0].index];
           },
           afterLabel: function(t, d){
-            var percent = "Percent: " + percentageData[t.index] + "%"
-           return percent;
+            //var percent = "Percent: " + percentageData[t.index] + "%"
+            percent = +(amountData[t.index] * 100/ totalSupply).toFixed(3);
+            var percent_text = "Percent: " + percent + "%";
+           return percent_text;
           }
         }
       },
