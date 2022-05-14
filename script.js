@@ -12,11 +12,33 @@ function getList(data){
   var selectList = '';
   for (var singleRow = 0; singleRow < allRows.length; singleRow++){
     var rowCells = allRows[singleRow].split(',');
-    var newItem = '<option id = "'+rowCells[1]+'" value ="' + rowCells[0] + '" >' + rowCells[0] + '</option>';
+    var newItem = '<option id = "'+rowCells[0]+'" value ="' + rowCells[0] + '" >' + rowCells[0] + '</option>';
     selectList += newItem;
   }
   document.getElementById("tokenList").innerHTML = selectList;
+  try{
+    parameterToken = getParameter();
+    document.getElementById(parameterToken).selected = "selected";
+  } catch (error){
+    console.error(error);
+  }
   selectToken();
+}
+
+function getParameter() {
+  var queryString = window.location.search;
+  var urlParams = new URLSearchParams(queryString);
+  var token = urlParams.get('token');
+  return token;
+}
+
+function setParameter(param, newval) {
+  search = window.location.search;
+  var regex = new RegExp("([?;&])" + param + "[^&;]*[;&]?");
+  var query = search.replace(regex, "$1").replace(/&$/, '');
+  parameterString = (query.length > 2 ? query + "&" : "?") + (newval ? param + "=" + newval : '');
+  urlPath = window.location.pathname + parameterString;
+  window.history.replaceState("","Ergo Tokenautics", urlPath);
 }
 
 function selectToken() {
@@ -27,6 +49,7 @@ function selectToken() {
   var selectedToken = tokenList.options[tokenList.selectedIndex].text;
   var selectedTokenId = tokenList.options[tokenList.selectedIndex].id;
   document.getElementById("titleToken").textContent = selectedToken;
+  setParameter('token',selectedToken);
   var tokenInfoUrl = 'https://api.ergoplatform.com/api/v1/tokens/' + selectedTokenId;
   var csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/data/' + selectedToken + '.csv'
   document.getElementById("download").href = csv;
