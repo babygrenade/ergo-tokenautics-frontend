@@ -12,7 +12,7 @@ function getList(data){
   var selectList = '';
   for (var singleRow = 0; singleRow < allRows.length; singleRow++){
     var rowCells = allRows[singleRow].split(',');
-    var newItem = '<option id = "'+rowCells[0]+'" value ="' + rowCells[0] + '" >' + rowCells[0] + '</option>';
+    var newItem = '<option id = "'+rowCells[0]+'" value ="' + rowCells[0] +'" data-decimal='+ rowCells[2] + ' >' + rowCells[0] + '</option>';
     selectList += newItem;
   }
   document.getElementById("tokenList").innerHTML = selectList;
@@ -66,24 +66,19 @@ async function getTokenDetails(){
   return tokenInfo;
 }
 
+function getDecimal(){
+  var tokenList = document.getElementById("tokenList");
+  var decimal = tokenList.options[tokenList.selectedIndex].getAttribute("data-decimal");
+  var decimalDivisor = Math.pow(10,decimal);
+  return decimalDivisor;
+}
+
 function showSummary(data){
   var addressData = data.map(function(d) {return d.address});
   var percentageData = data.map(function(d) {return d.percentage*100});
   var amountData = data.map(function(d) {return d.amount});
-  var d1 = 0;
-  var d2 = 0;
-  try{
-    var d1 = String(percentageData[0]).split('.')[1].length
-  } catch(error){
-    console.error(error);
-  }
-  try{
-    var d2 = String(amountData[0]).split('.')[1].length;
-  } catch(error){
-    console.error(error);
-  }
-  var decimal = Math.max(d1,d2);
-  var totalSupply = parseFloat(d3.sum(amountData).toFixed(decimal));
+  var decimalDivisor = getDecimal()
+  var totalSupply = d3.sum(amountData)/decimalDivisor;
   var contractList = [];
   contractList.push(0);
   for (var i=0; i < data.length; i++){
@@ -93,7 +88,8 @@ function showSummary(data){
     }
   }
 
-  var totalLocked = parseFloat(d3.sum(contractList).toFixed(decimal));
+
+  var totalLocked = d3.sum(contractList)/decimalDivisor;
   var line1 = "Total Supply: " + totalSupply; 
   var line2 = "Total Locked: " + totalLocked;
   summary = line1 +'\r\n'+ line2;
@@ -116,6 +112,7 @@ function makeChart(data) {
   }
   var addressLabels = addresses.map(function(d) {return d.address});
   var percentageData = addresses.map(function(d) {return d.percentage*100});
+  var decimalDivisor = getDecimal()
   var amountData = addresses.map(function(d) {return d.amount});
   var fullAmt = data.map(function(d) {return d.amount});
   var totalSupply = d3.sum(fullAmt);
@@ -153,11 +150,15 @@ function makeChart(data) {
           title: function(t,d){
             return addressLabels[t[0].index];
           },
+          label: function(t, d){
+            decimalAmount = amountData[t.index] / decimalDivisor;
+            return decimalAmount;
+          },
           afterLabel: function(t, d){
             //var percent = "Percent: " + percentageData[t.index] + "%"
             percent = +(amountData[t.index] * 100/ totalSupply).toFixed(3);
             var percent_text = "Percent: " + percent + "%";
-           return percent_text;
+            return percent_text;
           }
         }
       },
