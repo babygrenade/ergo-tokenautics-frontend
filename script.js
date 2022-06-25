@@ -5,7 +5,33 @@ $(document).ready(function(){
     dataType: 'text',
     success: function(data) {getList(data);}
   });
+  $.ajax({
+    type: "GET",
+    url: 'https://api.github.com/repos/babygrenade/ergo-tokenautics/commits?per_page=100',
+    dataType: 'json',
+    success: function(data) {getCommits(data);}
+  });
 });
+
+function getCommits(data){
+  commits = data.map(function(d) {if(d.commit.message.substring(0,11) == 'Data update') {return d.sha}});
+  timestamps = data.map(function(d) {if(d.commit.message.substring(0,11) == 'Data update') {return d.commit.author.date}})
+  commits = commits.filter(n => n);
+  timestamps = timestamps.filter(n => n);
+  commitsList = '';
+  for (var i = 0; i < commits.length; i++){
+    var newItem = '<option id = "'+commits[i]+'" value ="' + commits[i] + '" >' + timestamps[i] + '</option>';
+    commitsList += newItem;
+  }
+  document.getElementById("snapshotList").innerHTML = commitsList;
+  try{
+    parameterCommit = getParameter('commit');
+    document.getElementById(parameterCommit).selected = "selected";
+  } catch (error){
+    console.error(error);
+  }
+  selectToken();
+}
 
 function getList(data){
   var allRows = data.split(/\r?\n|\r/);
@@ -17,19 +43,18 @@ function getList(data){
   }
   document.getElementById("tokenList").innerHTML = selectList;
   try{
-    parameterToken = getParameter();
+    parameterToken = getParameter('token');
     document.getElementById(parameterToken).selected = "selected";
   } catch (error){
     console.error(error);
   }
-  selectToken();
 }
 
-function getParameter() {
+function getParameter(param) {
   var queryString = window.location.search;
   var urlParams = new URLSearchParams(queryString);
-  var token = urlParams.get('token');
-  return token;
+  var value = urlParams.get(param);
+  return value;
 }
 
 function setParameter(param, newval) {
@@ -49,22 +74,22 @@ function selectToken() {
   var selectedToken = tokenList.options[tokenList.selectedIndex].text;
   var selectedTokenId = tokenList.options[tokenList.selectedIndex].id;
   document.getElementById("titleToken").textContent = selectedToken;
+
+  var commitList = document.getElementById("snapshotList");
+  var selectedCommitId = commitList.options[commitList.selectedIndex].id;
   setParameter('token',selectedToken);
-  var tokenInfoUrl = 'https://api.ergoplatform.com/api/v1/tokens/' + selectedTokenId;
-  var csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/data/' + selectedToken + '.csv'
+  
+  if(selectedCommitId){
+    setParameter('commit',selectedCommitId);
+    var csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/'+ selectedCommitId +'/data/' + selectedToken + '.csv';
+  }
+  else{
+    var csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/data/' + selectedToken + '.csv';
+  }
   document.getElementById("download").href = csv;
   d3.csv(csv).then(makeChart);
 }
 
-async function getTokenDetails(){
-  var tokenList = document.getElementById("tokenList");
-  var selectedTokenId = tokenList.options[tokenList.selectedIndex].id;
-  var tokenInfoUrl = 'https://api.ergoplatform.com/api/v1/tokens/' + selectedTokenId;
-  const response = await fetch(tokenInfoUrl);
-  const tokenInfo = await response.json();
-  console.log(tokenInfo);
-  return tokenInfo;
-}
 
 function getDecimal(){
   var tokenList = document.getElementById("tokenList");
