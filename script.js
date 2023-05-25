@@ -12,6 +12,7 @@ $(document).ready(function(){
     success: function(data) {getCommits(data);}
   });
 });
+var excludecontracts = true;
 
 function getCommits(data){
   commits = data.map(function(d) {if(d.commit.message.substring(0,11) == 'Data update') {return d.sha}});
@@ -32,23 +33,73 @@ function getCommits(data){
   }
   selectToken();
 }
-
-function getList(data){
+function getList(data, selectedTokenId, selectedCommitId) {
   var allRows = data.split(/\r?\n|\r/);
   var selectList = '';
-  for (var singleRow = 0; singleRow < allRows.length; singleRow++){
+  for (var singleRow = 0; singleRow < allRows.length; singleRow++) {
     var rowCells = allRows[singleRow].split(',');
-    var newItem = '<option id = "'+rowCells[0]+'" value ="' + rowCells[0] +'" data-decimal='+ rowCells[2] + ' >' + rowCells[0] + '</option>';
+    var newItem = '<option id="' + rowCells[0] + '" value="' + rowCells[0] + '" data-decimal=' + rowCells[2] + '>' + rowCells[0] + '</option>';
     selectList += newItem;
   }
-  document.getElementById("tokenList").innerHTML = selectList;
-  try{
-    parameterToken = getParameter('token');
-    document.getElementById(parameterToken).selected = "selected";
-  } catch (error){
+  $('#tokenList').html(selectList);
+
+  try {
+    if (selectedTokenId) {
+      var tokenList = document.getElementById("tokenList");
+      var options = tokenList.options;
+      for (var i = 0; i < options.length; i++) {
+        if (options[i].id === selectedTokenId) {
+          tokenList.selectedIndex = i;
+          break;
+        }
+      }
+      // Reinitialize the Materialize select element
+      var instance = M.FormSelect.getInstance(tokenList);
+      if (!instance) {
+        M.FormSelect.init(tokenList);
+      } else {
+        instance.destroy();
+        M.FormSelect.init(tokenList);
+      }
+    }
+  } catch (error) {
     console.error(error);
   }
+
+  if(!selectedTokenId || !selectedCommitId) {
+      console.log("TokenId or CommitId is not defined");
+      return; // Or assign some default values
+  }
+  $.ajax({
+      type: "GET",
+      url: 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/token_list.csv',
+      dataType: 'text',
+      success: function (data) {
+          getChartData(data, selectedTokenId, selectedCommitId);
+      }
+  });
 }
+function getChartData(data, selectedTokenId, selectedCommitId) {
+  var csv;
+  if (selectedCommitId) {
+    setParameter('commit', selectedCommitId);
+    csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/' + selectedCommitId + '/data/' + selectedTokenId + '.csv';
+  } else {
+    csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/data/' + selectedTokenId + '.csv';
+  }
+  
+  document.getElementById("download").href = csv;
+
+  $.ajax({
+    type: "GET",
+    url: csv,
+    dataType: 'text',
+    success: function (data) {
+      makeChart(data);
+    }
+  });
+}
+
 
 function getParameter(param) {
   var queryString = window.location.search;
@@ -66,29 +117,44 @@ function setParameter(param, newval) {
   window.history.replaceState("","Ergo Tokenautics", urlPath);
 }
 
+function togglecontracts() {
+  excludecontracts = !excludecontracts; // Toggle the excludecontracts variable
+  selectToken(); // Re-run the selectToken() function to update the chart
+}
+
 function selectToken() {
+  console.log("Select Token Function");
   //chart.destroy();
   $('#chart').remove();
   $('#chart-wrapper').append('<canvas id="chart"><canvas>');
   var tokenList = document.getElementById("tokenList");
+  console.log("Token List:", tokenList);
   var selectedToken = tokenList.options[tokenList.selectedIndex].text;
-  var selectedTokenId = tokenList.options[tokenList.selectedIndex].id;
+  console.log("Selected Token:", selectedToken);
+  var selectedTokenId = (tokenList.selectedIndex >= 0) ? tokenList.options[tokenList.selectedIndex].id : undefined;
+  console.log("Selected Token ID:", selectedTokenId);
   document.getElementById("titleToken").textContent = selectedToken;
 
   var commitList = document.getElementById("snapshotList");
   var selectedCommitId = commitList.options[commitList.selectedIndex].id;
-  setParameter('token',selectedToken);
-  
-  if(selectedCommitId){
-    setParameter('commit',selectedCommitId);
-    var csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/'+ selectedCommitId +'/data/' + selectedToken + '.csv';
+  console.log("Selected Commit ID:", selectedCommitId);
+  setParameter('token', selectedToken);
+
+  if (selectedTokenId) {
+    $.ajax({
+      type: "GET",
+      url: 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/token_list.csv',
+      dataType: 'text',
+      success: function (data) {
+        getList(data, selectedTokenId, selectedCommitId);
+      }
+    });
+  } else {
+    // Handle the case where no token is selected
+    console.error('No token is selected');
   }
-  else{
-    var csv = 'https://raw.githubusercontent.com/babygrenade/ergo-tokenautics/master/data/' + selectedToken + '.csv';
-  }
-  document.getElementById("download").href = csv;
-  d3.csv(csv).then(makeChart);
 }
+
 
 
 function getDecimal(){
@@ -122,29 +188,43 @@ function showSummary(data){
   document.getElementById("summary").textContent = summary;
   return totalSupply
 }
+function makeChart(csvData) {
+  var data = d3.csvParse(csvData);
 
-function makeChart(data) {
   showSummary(data);
-  if (document.getElementById("pop_top").checked == true){
+
+  if (document.getElementById("pop_top").checked == true) {
     data = data.slice(1);
   }
 
-  if (data.length > 100){
-    addresses = data.slice(0,99);
+  if (excludecontracts) {
+    data = data.filter(function (d) {
+      return d.address.startsWith('9');
+    });
   }
-  else{
-    addresses = data
+
+  if (data.length > 100) {
+    data = data.slice(0, 100);
   }
-  var addressLabels = addresses.map(function(d) {return d.address});
-  var percentageData = addresses.map(function(d) {return d.percentage*100});
-  var decimalDivisor = getDecimal()
-  var amountData = addresses.map(function(d) {return d.amount});
-  var fullAmt = data.map(function(d) {return d.amount});
+
+  var addressLabels = data.map(function (d) {
+    return d.address;
+  });
+  var percentageData = data.map(function (d) {
+    return d.percentage * 100;
+  });
+  var decimalDivisor = getDecimal();
+  var amountData = data.map(function (d) {
+    return d.amount;
+  });
+  var fullAmt = data.map(function (d) {
+    return d.amount;
+  });
   var totalSupply = d3.sum(fullAmt);
   var shortLabels = [];
-  for ( var i = 0; i < addressLabels.length; i++){
-    if (addressLabels[i].length > 51){
-      var shortLabel = addressLabels[i].slice(0,50) + '...';
+  for (var i = 0; i < addressLabels.length; i++) {
+    if (addressLabels[i].length > 51) {
+      var shortLabel = addressLabels[i].slice(0, 50) + '...';
       shortLabels.push(shortLabel);
     } else {
       shortLabels.push(addressLabels[i]);
@@ -155,33 +235,30 @@ function makeChart(data) {
   var chart = new Chart(ctx, {
     type: 'horizontalBar',
     options: {
-       responsive: true,
-       maintainAspectRatio: false,
-       barThickness: 0.9,
-       scales: {
-            x: {
-                grid: {
-                  offset: true
-                }
-            },
-        
+      responsive: true,
+      maintainAspectRatio: false,
+      barThickness: 0.9,
+      scales: {
+        x: {
+          grid: {
+            offset: true
+          }
         },
-       legend: {
+      },
+      legend: {
         display: false
       },
       tooltips: {
-        //mode: 'index',
         callbacks: {
-          title: function(t,d){
+          title: function (t, d) {
             return addressLabels[t[0].index];
           },
-          label: function(t, d){
+          label: function (t, d) {
             decimalAmount = amountData[t.index] / decimalDivisor;
             return decimalAmount;
           },
-          afterLabel: function(t, d){
-            //var percent = "Percent: " + percentageData[t.index] + "%"
-            percent = +(amountData[t.index] * 100/ totalSupply).toFixed(3);
+          afterLabel: function (t, d) {
+            percent = +(amountData[t.index] * 100 / totalSupply).toFixed(3);
             var percent_text = "Percent: " + percent + "%";
             return percent_text;
           }
@@ -194,21 +271,19 @@ function makeChart(data) {
     data: {
       labels: shortLabels,
       longLabels: addressLabels,
-      datasets: [
-        {
-          label:'Amount',
-          data:amountData,
-          backgroundColor:'#ff6384'
-        }
-      ]
+      datasets: [{
+        label: 'Amount',
+        data: amountData,
+        backgroundColor: '#ff6384'
+      }]
     }
   });
-  document.getElementById("chart").onclick = function(evt){
+
+  document.getElementById("chart").onclick = function (evt) {
     var activePoints = chart.getElementsAtEvent(evt);
     var firstPoint = activePoints[0];
-    var contextUrl = 'https://explorer.ergoplatform.com/en/addresses/' + chart.data.longLabels[firstPoint._index] ;
+    var contextUrl = 'https://explorer.ergoplatform.com/en/addresses/' + chart.data.longLabels[firstPoint._index];
     if (firstPoint !== undefined)
-        window.open(contextUrl, '_blank');
+      window.open(contextUrl, '_blank');
   }
 }
-

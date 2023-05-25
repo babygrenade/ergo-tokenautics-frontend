@@ -1,55 +1,117 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Ergo Tokenautics</title>
-  <link rel="stylesheet" href="./style.css">
-
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    main {
+      flex: 1;
+    }
+  </style>
 </head>
 <body>
-<!-- partial:index.partial.html -->
-<body >
-  <h1>Ergo Tokenautics</h1>
-  
- <div id = "selector">
-<form name="token_select" id="token_select">
-  Token: <select name="tokenList" id="tokenList" onchange = 'selectToken()'>
-    <option value="*">Select Token</option>
-  </select>
-</form>
-  </div>
-  <div id = "snapshot">
-    <form name="snapshot-select" id="snapshot-select">
-      Snapshot: <select name="snapshotList" id = "snapshotList" onchange = 'selectToken()'>
-      <option value="*">Snapshot</option>
-      </select>
-    </form>
-  </div>
-  <p></p>
-  
-  <div id="summary" class = "summary">
-  </div>
-  <p></p>
-<div id="outer-chart" class = "outer-chart">
-<div id="chart-title" class="chart-title">Top 100 <span id = "titleToken" style="display: inline">Select Token</span> Holders</div>
-<div id="chart-options" class="options"><label for="pop_top">Hide Top Address</label><input type="checkbox" id="pop_top" name="pop_top" onchange='selectToken()'></div>
+  <header>
+    <nav class="blue">
+      <div class="nav-wrapper container">
+        <a href="#" class="brand-logo">Ergo Tokenautics</a>
+      </div>
+    </nav>
+  </header>
 
-<div id="chart-wrapper" class="chart-wrapper">
-  <canvas id="chart"></canvas>
-</div>
-  </div>
-  
-<div id="footer">
-  <div class="left"><a id="download" href="">Download Full Token Holder List</a></div>
-  <div class="left" ><a href="https://github.com/babygrenade/ergo-tokenautics" target="_blank">Github</a></div>
-</div>
+  <main>
+    <div class="container">
+      <div class="row">
+        <div class="col s12">
+          <h3 class="center-align">Ergo Tokenautics</h3>
+        </div>
+      </div>
 
-</body>
-<!-- partial -->
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js'></script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels'></script>
-<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script><script  src="./script.js"></script>
+      <div class="row">
+        <form class="col s12 m6" name="token_select" id="token_select">
+          <div class="input-field">
+            <select name="tokenList" id="tokenList" onchange="selectToken()">
+              <option value="*" disabled selected>Select Token</option>
 
+            </select>
+            <label>Token</label>
+          </div>
+        </form>
+
+        <form class="col s12 m6" name="snapshot-select" id="snapshot-select">
+          <div class="input-field">
+            <select name="snapshotList" id="snapshotList" onchange="selectToken()">
+              <option value="*" disabled selected>Snapshot</option>
+            </select>
+            <label>Snapshot</label>
+          </div>
+        </form>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <div id="summary" class="card-panel"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <div id="outer-chart" class="card-panel">
+            <div id="chart-title" class="center-align"><span id="titleToken">Select Token</span> Holders</div>
+            <div id="chart-options" class="center-align">
+              <label>
+                <input type="checkbox" id="pop_top" name="pop_top" onchange="selectToken()" checked />
+                <span>Hide Top Address</span>
+              </label>
+              <label>
+                <input type="checkbox" id="exclude_contracts" name="exclude_contracts" onchange="togglecontracts()" checked />
+
+                <span>Exclude Contracts</span>
+              </label>
+            </div>
+            
+            <div id="chart-wrapper">
+              <canvas id="chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <div class="center-align">
+            <a id="download" href="#" class="waves-effect waves-light btn">Download Full Token Holder List</a>
+            <a href="https://github.com/babygrenade/ergo-tokenautics" target="_blank" class="waves-effect waves-light btn">Github</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="page-footer blue">
+    <div class="container">
+      <div class="row">
+        <div class="col s12">
+          <p class="center-align">© 2023 Ergo Tokenautics. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="./script.js"></script>
+  <script>
+    M.AutoInit();
+  </script>
 </body>
 </html>
