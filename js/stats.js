@@ -67,18 +67,22 @@ function showSummary(data) {
     var tokenCirculation = (totalSupply - totalLocked).toFixed(2);
     console.log("Token Circulation:", tokenCirculation);
 
-    var tokenAPIUrl = 'https://api.ergo.watch/tokens/472c3d4ecaa08fb7392ff041ee2e6af75f4a558810a74b28600549d5392810e8/supply';
-
+    var selectedToken = tokenList.options[tokenList.selectedIndex].text;
+    var selectedTokenId = tokenList.options[tokenList.selectedIndex].id;
+    //console.log(selectedTokenId);
+    //console.log(selectedToken);
+    var tokenAPIUrl = 'https://api.ergo.watch/tokens/'+selectedTokenId+'/supply';
+    console.log(tokenAPIUrl);
     fetch(tokenAPIUrl)
         .then(response => response.json())
         .then(tokenInfo => {
-            var emittedSupply = tokenInfo.emitted;
-            var inP2PKsSupply = tokenInfo.in_p2pks;
-            var inContractsSupply = tokenInfo.in_contracts;
-            var burnedSupply = tokenInfo.burned;
+            var emittedSupply = tokenInfo.emitted /decimalDivisor;
+            var inP2PKsSupply = tokenInfo.in_p2pks / decimalDivisor;
+            var inContractsSupply = tokenInfo.in_contracts / decimalDivisor;
+            var burnedSupply = tokenInfo.burned / decimalDivisor;
 
             // Calculate total supply (emitted supply minus burned supply)
-            var totalSupply = emittedSupply - burnedSupply;
+            //var totalSupply = emittedSupply - burnedSupply;
             console.log("Total Supply:", totalSupply);
 
             console.log(inP2PKsSupply, 'inP2PKsSupply')
