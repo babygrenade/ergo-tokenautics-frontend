@@ -3,6 +3,12 @@ function makeChart(data) {
     if (document.getElementById("pop_top").checked == true){
       data = data.slice(1);
     }
+
+    if (document.getElementById("exclude_contracts").checked == true){
+      data = data.filter(function (d) {
+        return d.address.startsWith('9');
+    });
+    }
   
     if (data.length > 100){
       addresses = data.slice(0,99);
